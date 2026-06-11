@@ -232,7 +232,7 @@
 
     <div style="display:flex; gap:10px; margin-top:16px; align-items:center; flex-wrap:wrap;">
       <div class="total-banner" style="flex:1; min-width:200px;">
-        <span class="lbl" id="total-label">仕入れ総額（100個）</span>
+        <span class="lbl" id="total-label">仕入れ総額</span>
         <span class="val" id="tc-total">—</span>
       </div>
       <button class="btn btn-accent" onclick="saveNew()" style="height:auto; padding:14px 22px; font-size:14px;">
@@ -640,8 +640,13 @@ function calc() {
   const cpu       = beforeTax+ctaxAmt;
   const total     = cpu*qty;
 
-  document.getElementById('total-label').textContent = `仕入れ総額（${qty.toLocaleString()}個）`;
-  document.getElementById('tc-total').textContent    = Math.round(total).toLocaleString()+' 円';
+  if (qty > 0) {
+    document.getElementById('total-label').textContent = `仕入れ総額（${qty.toLocaleString()}個）`;
+    document.getElementById('tc-total').textContent    = Math.round(total).toLocaleString()+' 円';
+  } else {
+    document.getElementById('total-label').textContent = '仕入れ総額';
+    document.getElementById('tc-total').textContent    = '—';
+  }
 
   // ---- 仕入原価内訳（総額＋1個あたり）----
   const yen = n => Math.round(n).toLocaleString()+'円';
