@@ -404,9 +404,10 @@ function toast(msg) {
 // ---- フォームから値を読む ----
 function v(id) {
   const box = document.getElementById('uc-' + id);
-  if (box && box.checked) return 0;            // 未確認は0扱い
+  if (box && box.checked) return 0;            // 未確認は0扱い（計算用）
   return parseFloat(document.getElementById(id).value) || 0;
 }
+function rawv(id) { return parseFloat(document.getElementById(id).value) || 0; } // 未確認でも入力値を保持
 function s(id) { return document.getElementById(id).value.trim(); }
 
 // ---- フォームに値をセット ----
@@ -422,11 +423,11 @@ function getProductData() {
   return {
     name:    s('prod-name'),
     code:    s('prod-code'),
-    cny:     v('cny'),    qty:     v('qty'),
-    tariff:  v('tariff'), ship:    v('ship'),
-    inspect: v('inspect'),agent:   v('agent'),
-    pack:    v('pack'),   insert:  v('insert'),
-    ctax:    v('ctax'),
+    cny:     rawv('cny'),    qty:     rawv('qty'),
+    tariff:  rawv('tariff'), ship:    rawv('ship'),
+    inspect: rawv('inspect'),agent:   rawv('agent'),
+    pack:    rawv('pack'),   insert:  rawv('insert'),
+    ctax:    rawv('ctax'),
     unconfirmed: uc,
   };
 }
@@ -434,7 +435,7 @@ function getProductData() {
 function saveNew() {
   const data = getProductData();
   if (!data.name) { toast('商品名を入力してください'); return; }
-  const newProd = { id: Date.now(), ...data, createdAt: new Date().toLocaleDateString('ja-JP'), updatedAt: new Date().toLocaleDateString('ja-JP') };
+  const newProd = { id: Date.now(), ...data, createdAt: new Date().toLocaleDateString('ja-JP'), updatedAt: new Date().toLocaleString('ja-JP') };
   products.unshift(newProd);
   currentProductId = newProd.id;
   toast('商品を新規保存しました');
@@ -447,7 +448,7 @@ function saveOverwrite() {
   if (!currentProductId) { toast('上書きする商品が選択されていません（「新規保存」をお使いください）'); return; }
   const idx = products.findIndex(p => p.id === currentProductId);
   if (idx < 0) { toast('対象の商品が見つかりません'); return; }
-  products[idx] = { ...products[idx], ...data, updatedAt: new Date().toLocaleDateString('ja-JP') };
+  products[idx] = { ...products[idx], ...data, updatedAt: new Date().toLocaleString('ja-JP') };
   toast('商品を上書き保存しました');
   afterSave();
 }
@@ -540,12 +541,14 @@ function renderProductList() {
 
 function calcCpu(p) {
   const fx = v('fx');
-  const qty = p.qty || 1;
+  const uc = p.unconfirmed || {};
+  const g = k => uc[k] ? 0 : (Number(p[k]) || 0);   // 未確認は0として計算
+  const qty = g('qty') || 1;
   const per = x => x / qty;
-  const baseJpy = p.cny * fx;
-  const tariffAmt = baseJpy * ((p.tariff||0)/100);
-  const beforeTax = baseJpy + tariffAmt + per(p.ship||0) + per(p.inspect||0) + per(p.agent||0) + per(p.pack||0) + per(p.insert||0);
-  return beforeTax * (1 + (p.ctax||0)/100);
+  const baseJpy = g('cny') * fx;
+  const tariffAmt = baseJpy * (g('tariff')/100);
+  const beforeTax = baseJpy + tariffAmt + per(g('ship')) + per(g('inspect')) + per(g('agent')) + per(g('pack')) + per(g('insert'));
+  return beforeTax * (1 + g('ctax')/100);
 }
 
 function selectProductFromList(id) {
@@ -727,8 +730,11 @@ function buildExportPayload() {
     exportedAt: new Date().toLocaleString('ja-JP'),
     products: products.map(p => {
       const cpu = calcCpu(p);
-      const out = { ...p, fx, cpu: Math.round(cpu), total: Math.round(cpu * (p.qty || 0)) };
-      if (p.unconfirmed) Object.keys(p.unconfirmed).forEach(f => { if (p.unconfirmed[f]) out[f] = '未確認'; });
+      const g = k => (p.unconfirmed && p.unconfirmed[k]) ? 0 : (Number(p[k]) || 0);
+      const out = { ...p, fx, cpu: Math.round(cpu), total: Math.round(cpu * (g('qty'))) };
+      if (p.unconfirmed) Object.keys(p.unconfirmed).forEach(f => {
+        if (p.unconfirmed[f]) { const raw = Number(p[f]) || 0; out[f] = raw ? ('未確認（' + raw + '）') : '未確認'; }
+      });
       return out;
     }),
     records,
@@ -741,8 +747,14 @@ function mergeProducts(incoming) {
     const fields = { name: ip.name || '', code: ip.code || '' };
     const uc = {};
     ['cny','qty','tariff','ship','inspect','agent','pack','insert','ctax'].forEach(f => {
-      if (ip[f] === '未確認') { fields[f] = 0; uc[f] = true; }
-      else { fields[f] = +ip[f] || 0; }
+      const val = ip[f];
+      if (typeof val === 'string' && val.indexOf('未確認') === 0) {
+        uc[f] = true;
+        const m = val.match(/[\d.]+/);   // 「未確認（3）」→ 3 を復元
+        fields[f] = m ? +m[0] : 0;
+      } else {
+        fields[f] = +val || 0;
+      }
     });
     fields.unconfirmed = uc;
     let idx = -1;
