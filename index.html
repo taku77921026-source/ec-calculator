@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>EC原価・利益計算ツール</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f7f5; --surface: #ffffff; --surface2: #f2f1ee;
+    --border: #e4e2dc; --border2: #d0cec7;
+    --text: #1a1a18; --text2: #6b6960; --text3: #9b9890;
+    --accent: #2563eb; --accent-bg: #eff4ff; --accent-text: #1d4ed8;
+    --green: #15803d; --green-bg: #f0fdf4;
+    --red: #b91c1c; --red-bg: #fef2f2;
+    --amber: #92400e; --amber-bg: #fffbeb;
+    --radius: 8px; --radius-lg: 12px;
+  }
+  body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  header h1 { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
+  header span { font-size: 12px; color: var(--text3); }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 24px 16px 48px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px 24px; margin-bottom: 16px; }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; }
+  .card-title { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
+
+  .fx-pill { display: flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--text2); }
+  .fx-pill input { width: 44px; border: none; background: transparent; font-size: 13px; font-weight: 500; color: var(--text); font-family: inherit; text-align: center; outline: none; }
+
+  .group-label { font-size: 11px; font-weight: 700; color: var(--text3); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px 14px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; }
+  @media (max-width: 600px) { .grid3 { grid-template-columns: 1fr 1fr; } .grid2 { grid-template-columns: 1fr; } }
+  @media (max-width: 400px) { .grid3 { grid-template-columns: 1fr; } }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; color: var(--text2); }
+  .field input, .field select { padding: 8px 10px; font-size: 14px; font-family: inherit; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface2); color: var(--text); width: 100%; transition: border-color .15s; }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+  hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+  /* 商品セレクター */
+  .product-bar { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: end; margin-bottom: 16px; }
+  @media (max-width: 560px) { .product-bar { grid-template-columns: 1fr 1fr; } .product-bar .btn-save { grid-column: 1 / -1; } }
+
+  .btn { padding: 8px 16px; font-size: 13px; font-family: inherit; font-weight: 500; border-radius: var(--radius); cursor: pointer; transition: all .15s; white-space: nowrap; border: 1px solid; height: 38px; }
+  .btn-primary { background: var(--accent-bg); color: var(--accent-text); border-color: #bfdbfe; }
+  .btn-primary:hover { background: #dbeafe; }
+  .btn-accent { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+  .btn-accent:hover { background: #1d4ed8; border-color: #1d4ed8; }
+  .btn-danger { background: var(--red-bg); color: var(--red); border-color: #fecaca; }
+  .btn-danger:hover { background: #fee2e2; }
+  .btn-neutral { background: var(--surface2); color: var(--text2); border-color: var(--border2); }
+  .btn-neutral:hover { background: var(--border); }
+
+  .product-info-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  @media (max-width: 500px) { .product-info-row { grid-template-columns: 1fr; } }
+
+  /* バナー */
+  .total-banner { background: var(--accent-bg); border: 1px solid #bfdbfe; border-radius: var(--radius); padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+  .total-banner .lbl { font-size: 13px; font-weight: 500; color: var(--accent-text); }
+  .total-banner .val { font-size: 24px; font-weight: 700; color: var(--accent-text); letter-spacing: -0.02em; }
+
+  /* 原価内訳テーブル */
+  table.btable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .btable th { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 12px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+  .btable th:first-child { text-align: left; }
+  .btable td { padding: 7px 12px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+  .btable td:first-child { text-align: left; color: var(--text2); }
+  .btable tr.sub td { font-weight: 700; color: var(--text); background: var(--surface2); }
+  .btable tr.tot td { font-weight: 700; background: var(--accent-bg); color: var(--accent-text); border-bottom: none; font-size: 14px; }
+
+  /* トップナビ（計算ツール / 設定） */
+  .navtabs { display: flex; gap: 6px; margin-bottom: 20px; }
+  .nav-tab { padding: 8px 18px; font-size: 14px; font-family: inherit; font-weight: 500; border: 1px solid var(--border2); border-radius: 20px; cursor: pointer; background: var(--surface); color: var(--text2); transition: all .15s; }
+  .nav-tab:hover { background: var(--surface2); }
+  .nav-tab.active { background: var(--accent-bg); color: var(--accent-text); border-color: #bfdbfe; font-weight: 700; }
+
+  /* タブ */
+  .tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .tab { padding: 6px 14px; font-size: 13px; font-family: inherit; border: 1px solid var(--border2); border-radius: 20px; cursor: pointer; background: transparent; color: var(--text2); transition: all .15s; }
+  .tab:hover { background: var(--surface2); }
+  .tab.active { background: var(--accent-bg); color: var(--accent-text); border-color: #bfdbfe; font-weight: 500; }
+
+  /* プラットフォームテーブル */
+  .table-wrap { overflow-x: auto; }
+  table.ptable { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
+  .ptable th { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 8px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .ptable td { padding: 8px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .ptable tr:last-child td { border-bottom: none; }
+  .ptable input { padding: 5px 8px; font-size: 13px; font-family: inherit; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface2); color: var(--text); width: 76px; transition: border-color .15s; }
+  .ptable input:focus { outline: none; border-color: var(--accent); background: #fff; }
+
+  .badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+  .badge.green { background: var(--green-bg); color: var(--green); }
+  .badge.red   { background: var(--red-bg);   color: var(--red); }
+  .badge.amber { background: var(--amber-bg); color: var(--amber); }
+  .num-green { color: var(--green); font-weight: 700; }
+  .num-red   { color: var(--red);   font-weight: 700; }
+
+  /* サマリー */
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  @media (max-width: 600px) { .summary-grid { grid-template-columns: 1fr 1fr; } }
+  .metric { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+  .metric .mlabel { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+  .metric .mvalue { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; }
+  .metric .mvalue.green { color: var(--green); }
+  .metric .mvalue.red   { color: var(--red); }
+
+  /* 送料記録 */
+  .ship-form { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 16px; }
+  @media (max-width: 650px) { .ship-form { grid-template-columns: 1fr 1fr; } .ship-form .add-btn { grid-column: 1 / -1; } }
+
+  table.rtable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .rtable th { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 10px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+  .rtable td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .rtable tr:last-child td { border-bottom: none; }
+  .rtable tr:hover td { background: var(--surface2); }
+
+  .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+  .del-btn { font-size: 11px; color: var(--text3); background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 3px 10px; cursor: pointer; font-family: inherit; transition: all .15s; }
+  .del-btn:hover { color: var(--red); border-color: var(--red); }
+  .empty-state { text-align: center; padding: 24px 0; color: var(--text3); font-size: 13px; }
+
+  /* トースト */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--text); color: #fff; font-size: 13px; padding: 10px 20px; border-radius: 20px; opacity: 0; transition: all .3s; pointer-events: none; z-index: 100; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* 商品リストモーダル風バナー */
+  .product-list-wrap { margin-top: 12px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; display: none; }
+  .product-list-wrap.open { display: block; }
+  table.prods { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .prods th { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); background: var(--surface2); }
+  .prods td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .prods tr:last-child td { border-bottom: none; }
+  .prods tr.data-row:hover td { background: var(--accent-bg); cursor: pointer; }
+
+  footer { text-align: center; padding: 24px; font-size: 12px; color: var(--text3); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>EC原価・利益計算ツール</h1>
+  <span>Amazon / 楽天 / Yahoo! / Shopify</span>
+</header>
+
+<div class="container">
+
+  <!-- トップナビ -->
+  <div class="navtabs">
+    <button class="nav-tab active" onclick="switchView('main')">計算ツール</button>
+    <button class="nav-tab" onclick="switchView('settings')">設定</button>
+  </div>
+
+  <!-- ===== 計算ツール ビュー ===== -->
+  <div id="view-main" class="view">
+
+  <!-- 仕入れコスト入力 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">仕入れコスト入力</div>
+    </div>
+
+    <!-- 商品セレクター -->
+    <div class="group-label">商品</div>
+    <div class="product-bar">
+      <div class="field">
+        <label>登録済み商品から読み込む</label>
+        <select id="product-select" onchange="loadProduct()">
+          <option value="">— 商品を選択 —</option>
+        </select>
+      </div>
+      <button class="btn btn-neutral" onclick="toggleProductList()" title="登録済み商品一覧">一覧</button>
+      <button class="btn btn-danger" id="btn-delete" onclick="deleteProduct()" style="display:none">削除</button>
+    </div>
+
+    <div class="product-info-row">
+      <div class="field"><label>商品名</label><input id="prod-name" type="text" placeholder="例: オリジナルボトル 500ml"></div>
+      <div class="field"><label>商品コード（SKU）</label><input id="prod-code" type="text" placeholder="例: BTL-001"></div>
+    </div>
+
+    <!-- 商品一覧テーブル（トグル） -->
+    <div class="product-list-wrap" id="product-list-wrap">
+      <table class="prods">
+        <thead><tr><th>商品名</th><th>コード</th><th>元価格</th><th>仕入れ数</th><th>原価/個</th><th></th></tr></thead>
+        <tbody id="product-list-body"></tbody>
+      </table>
+    </div>
+
+    <hr class="divider">
+    <div class="group-label">数量・コスト</div>
+    <div class="grid3" style="margin-bottom:14px">
+      <div class="field"><label>為替レート（1元 = 円）</label><input id="fx" type="number" placeholder="例: 25" step="0.5"></div>
+      <div class="field"><label>元価格（元）</label><input id="cny" type="number" placeholder="例: 150" step="1"></div>
+      <div class="field"><label>仕入れ数量（個）</label><input id="qty" type="number" placeholder="例: 100" step="1"></div>
+      <div class="field"><label>関税（%）</label><input id="tariff" type="number" placeholder="例: 3" step="0.5"></div>
+    </div>
+
+    <hr class="divider">
+    <div class="group-label">諸費用（今回の仕入れ総額で入力）</div>
+    <div class="grid3" style="margin-bottom:10px">
+      <div class="field"><label>送料（円 / 総額）</label><input id="ship" type="number" placeholder="例: 18000" step="100"></div>
+      <div class="field"><label>検品料（円 / 総額）</label><input id="inspect" type="number" placeholder="例: 3000" step="100"></div>
+      <div class="field"><label>代行手数料（円 / 総額）</label><input id="agent" type="number" placeholder="例: 5000" step="100"></div>
+    </div>
+    <div class="grid3">
+      <div class="field"><label>梱包材（円 / 総額）</label><input id="pack" type="number" placeholder="例: 4000" step="100"></div>
+      <div class="field"><label>同梱物（円 / 総額）</label><input id="insert" type="number" placeholder="例: 2000" step="100"></div>
+      <div class="field"><label>消費税（%）</label><input id="ctax" type="number" placeholder="例: 10" step="1"></div>
+    </div>
+
+    <div style="display:flex; gap:10px; margin-top:16px; align-items:center; flex-wrap:wrap;">
+      <div class="total-banner" style="flex:1; min-width:200px;">
+        <span class="lbl" id="total-label">仕入れ総額（100個）</span>
+        <span class="val" id="tc-total">—</span>
+      </div>
+      <button class="btn btn-accent" onclick="saveProduct()" style="height:auto; padding:14px 24px; font-size:14px;">
+        💾 この商品を登録 / 上書き保存
+      </button>
+      <button class="btn btn-neutral" onclick="clearForm()" style="height:auto; padding:14px 20px; font-size:14px;">
+        🗑 入力をクリア
+      </button>
+    </div>
+  </div>
+
+  <!-- 仕入原価内訳 -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">仕入原価内訳（総額）</div>
+    <div id="breakdown"></div>
+  </div>
+
+  <!-- 販売シミュレーション -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">プラットフォーム別 販売シミュレーション</div>
+    <div class="tabs">
+      <button class="tab active" onclick="setMode('price')">販売価格から計算</button>
+      <button class="tab" onclick="setMode('margin')">目標利益率から逆算</button>
+    </div>
+    <p style="font-size:12px; color:var(--text3); margin-bottom:12px;" id="sim-hint">各プラットフォームに販売価格を入力 → 利益額・利益率を計算します。</p>
+    <div class="table-wrap">
+      <table class="ptable">
+        <thead>
+          <tr>
+            <th>プラットフォーム</th><th>手数料率</th><th>販売送料（円）</th>
+            <th id="price-col-header">販売価格（円）</th><th>利益額</th><th id="margin-col-header">利益率</th><th>ステータス</th>
+          </tr>
+        </thead>
+        <tbody id="platform-rows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  </div><!-- /view-main -->
+
+  <!-- ===== 設定 ビュー ===== -->
+  <div id="view-settings" class="view" style="display:none">
+
+  <!-- プラットフォーム手数料率 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">プラットフォーム手数料率</div>
+      <span style="font-size:12px; color:var(--text3)" id="fees-saved-status"></span>
+    </div>
+    <p style="font-size:12px; color:var(--text2); margin-bottom:14px;">
+      各プラットフォームの販売手数料率（%）を設定します。ここで保存した値が販売シミュレーションの計算に使われます。
+    </p>
+    <div class="grid2">
+      <div class="field"><label>Amazon（%）</label><input id="fee-set-amazon" type="number" step="0.1" min="0" max="100" placeholder="例: 15"></div>
+      <div class="field"><label>楽天（%）</label><input id="fee-set-rakuten" type="number" step="0.1" min="0" max="100" placeholder="例: 6.5"></div>
+      <div class="field"><label>Yahoo!（%）</label><input id="fee-set-yahoo" type="number" step="0.1" min="0" max="100" placeholder="例: 7.4"></div>
+      <div class="field"><label>Shopify（%）</label><input id="fee-set-shopify" type="number" step="0.1" min="0" max="100" placeholder="例: 2.9"></div>
+    </div>
+    <div style="margin-top:14px;">
+      <button class="btn btn-primary" onclick="saveFees()">手数料率を保存</button>
+    </div>
+  </div>
+
+  <!-- 接続設定 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Googleスプレッドシート連携 — 接続設定</div>
+      <span style="font-size:12px; color:var(--text3)" id="gas-saved-status"></span>
+    </div>
+    <p style="font-size:12px; color:var(--text2); margin-bottom:14px;">
+      登録済みの<strong>商品マスター</strong>と<strong>送料記録</strong>を、自分のGoogleスプレッドシートに一覧として書き出すための設定です。初回のみ下の「設定方法」に従ってGASを設置してください。
+    </p>
+    <div class="field" style="margin-bottom:10px">
+      <label>GAS WebアプリURL（<code>/exec</code> で終わるURL）</label>
+      <input id="gas-url" type="text" placeholder="https://script.google.com/macros/s/...../exec">
+    </div>
+    <div class="field" style="margin-bottom:14px">
+      <label>スプレッドシートURL（任意・「シートを開く」用）</label>
+      <input id="sheet-url" type="text" placeholder="https://docs.google.com/spreadsheets/d/....">
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <button class="btn btn-primary" onclick="saveGasConfig()">設定を保存</button>
+      <button class="btn btn-neutral" onclick="toggleGasHelp()">設定方法</button>
+    </div>
+    <div id="gas-help" style="display:none; margin-top:16px; padding:16px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius); font-size:12px; line-height:1.9; color:var(--text2)">
+      <strong style="color:var(--text)">初回セットアップ（一度だけ）</strong>
+      <ol style="margin:8px 0 0 18px; padding:0;">
+        <li>Googleで新しいスプレッドシートを作成する</li>
+        <li>メニュー <strong>拡張機能 ▸ Apps Script</strong> を開く</li>
+        <li>初期コードを全削除し、別途お渡しする <code>gas-code.gs</code> の中身を貼り付けて保存</li>
+        <li>右上 <strong>デプロイ ▸ 新しいデプロイ</strong> ▸ 種類「ウェブアプリ」を選択</li>
+        <li>「次のユーザーとして実行: 自分」「アクセスできるユーザー: 全員」に設定してデプロイ</li>
+        <li>表示された <strong>ウェブアプリURL（/exec）</strong> を上の欄に貼り付ける</li>
+        <li>スプレッドシートのURLを「シートを開く」欄に貼り付ける（任意）</li>
+      </ol>
+      <p style="margin-top:10px; color:var(--text3)">
+        ※ 書き出しは毎回「上書き同期」です（シートの内容は最新の登録データに置き換わります）。<br>
+        ※ ブラウザの仕様上、書き出しの成否はこのツールからは確認できません。「シートを開く」で実際の反映をご確認ください。
+      </p>
+    </div>
+  </div>
+
+  <!-- 同期 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">スプレッドシートと同期</div>
+      <span style="font-size:12px; color:var(--text3)" id="gas-status"></span>
+    </div>
+
+    <div class="group-label">このブラウザ → スプレッドシート</div>
+    <p style="font-size:12px; color:var(--text2); margin:6px 0 10px;">
+      商品の<strong>登録・上書き・削除</strong>は、連携設定済みなら<strong>自動でスプレッドシートに反映</strong>されます（全件上書き同期）。手動操作は不要です。
+    </p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-neutral" onclick="openSheet()">シートを開く</button>
+    </div>
+
+    <hr class="divider">
+
+    <div class="group-label">スプレッドシート → このブラウザ</div>
+    <p style="font-size:12px; color:var(--text2); margin:6px 0 10px;">
+      スプレッドシートに登録済みの<strong>過去の商品</strong>をこのブラウザに読み込みます。別のPC・ブラウザでも、シート経由で過去商品を呼び出せます。<br>
+      <span style="color:var(--text3)">※ 同じSKU（なければ同じ商品名）は上書き更新、無ければ新規追加します。送料記録は読み込みません。</span>
+    </p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="importFromSheet()">スプレッドシートから読み込む</button>
+    </div>
+  </div>
+
+  </div><!-- /view-settings -->
+
+</div>
+
+<div class="toast" id="toast"></div>
+<footer>EC原価・利益計算ツール — データはブラウザのローカルストレージに保存／Googleスプレッドシートへ書き出し可能</footer>
+
+<script>
+const PLATFORMS = [
+  { id: 'amazon',  name: 'Amazon',  fee: 15 },
+  { id: 'rakuten', name: '楽天',    fee: 6.5 },
+  { id: 'yahoo',   name: 'Yahoo!',  fee: 7.4 },
+  { id: 'shopify', name: 'Shopify', fee: 2.9 },
+];
+
+let mode = 'price';
+let records = [];
+let products = [];  // 商品マスター
+let currentProductId = null;
+
+// ---- ストレージ ----
+function loadAll() {
+  try { records  = JSON.parse(localStorage.getItem('ec-ship-records') || '[]'); } catch(e) { records = []; }
+  try { products = JSON.parse(localStorage.getItem('ec-products') || '[]'); } catch(e) { products = []; }
+}
+function saveAll() {
+  localStorage.setItem('ec-ship-records', JSON.stringify(records));
+  localStorage.setItem('ec-products',     JSON.stringify(products));
+}
+
+// ---- トースト ----
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ---- フォームから値を読む ----
+function v(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function s(id) { return document.getElementById(id).value.trim(); }
+
+// ---- フォームに値をセット ----
+function setField(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val ?? '';
+}
+
+// ---- 商品マスター ----
+function getProductData() {
+  return {
+    name:    s('prod-name'),
+    code:    s('prod-code'),
+    cny:     v('cny'),    qty:     v('qty'),
+    tariff:  v('tariff'), ship:    v('ship'),
+    inspect: v('inspect'),agent:   v('agent'),
+    pack:    v('pack'),   insert:  v('insert'),
+    ctax:    v('ctax'),
+  };
+}
+
+function saveProduct() {
+  const data = getProductData();
+  if (!data.name) { toast('商品名を入力してください'); return; }
+
+  if (currentProductId) {
+    const idx = products.findIndex(p => p.id === currentProductId);
+    if (idx >= 0) { products[idx] = { ...products[idx], ...data, updatedAt: new Date().toLocaleDateString('ja-JP') }; toast('商品を上書き保存しました'); }
+  } else {
+    const newProd = { id: Date.now(), ...data, createdAt: new Date().toLocaleDateString('ja-JP'), updatedAt: new Date().toLocaleDateString('ja-JP') };
+    products.unshift(newProd);
+    currentProductId = newProd.id;
+    toast('商品を新規登録しました');
+  }
+  saveAll();
+  refreshProductSelect();
+  renderProductList();
+  document.getElementById('btn-delete').style.display = '';
+
+  // スプレッドシート連携が設定済みなら、登録と同時に自動転記
+  if (s('gas-url')) exportToSheet(true);
+}
+
+function clearForm() {
+  currentProductId = null;
+  document.getElementById('product-select').value = '';
+  document.getElementById('btn-delete').style.display = 'none';
+  ['prod-name','prod-code','cny','qty','tariff','ship','inspect','agent','pack','insert','ctax']
+    .forEach(id => setField(id, ''));
+  calc();
+  toast('入力をリフレッシュしました');
+}
+
+function loadProduct() {
+  const id = parseInt(document.getElementById('product-select').value);
+  if (!id) { currentProductId = null; document.getElementById('btn-delete').style.display = 'none'; return; }
+  const p = products.find(pr => pr.id === id);
+  if (!p) return;
+  currentProductId = p.id;
+  setField('prod-name', p.name); setField('prod-code', p.code);
+  setField('cny', p.cny);       setField('qty', p.qty);
+  setField('tariff', p.tariff); setField('ship', p.ship);
+  setField('inspect', p.inspect); setField('agent', p.agent);
+  setField('pack', p.pack);     setField('insert', p.insert);
+  setField('ctax', p.ctax);
+  document.getElementById('btn-delete').style.display = '';
+  calc();
+  toast(p.name + ' を読み込みました');
+}
+
+function deleteProduct() {
+  if (!currentProductId) return;
+  const p = products.find(pr => pr.id === currentProductId);
+  if (!p) return;
+  if (!confirm(p.name + ' を削除しますか？')) return;
+  products = products.filter(pr => pr.id !== currentProductId);
+  currentProductId = null;
+  saveAll();
+  refreshProductSelect();
+  renderProductList();
+  document.getElementById('btn-delete').style.display = 'none';
+  document.getElementById('product-select').value = '';
+  toast('削除しました');
+  if (s('gas-url')) exportToSheet(true);
+}
+
+function refreshProductSelect() {
+  const sel = document.getElementById('product-select');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— 商品を選択 —</option>' +
+    products.map(p => `<option value="${p.id}" ${p.id == currentProductId ? 'selected' : ''}>${p.name}${p.code ? '　[' + p.code + ']' : ''}</option>`).join('');
+}
+
+function toggleProductList() {
+  const wrap = document.getElementById('product-list-wrap');
+  wrap.classList.toggle('open');
+  if (wrap.classList.contains('open')) renderProductList();
+}
+
+function renderProductList() {
+  const tbody = document.getElementById('product-list-body');
+  if (products.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text3); padding:16px">登録済みの商品はありません</td></tr>';
+    return;
+  }
+  tbody.innerHTML = products.map(p => {
+    const cpu = calcCpu(p);
+    return `<tr class="data-row" onclick="selectProductFromList(${p.id})">
+      <td style="font-weight:500">${p.name}</td>
+      <td style="color:var(--text3)">${p.code || '—'}</td>
+      <td>${p.cny}元</td>
+      <td>${(p.qty||0).toLocaleString()}個</td>
+      <td style="font-weight:500">${cpu ? Math.round(cpu).toLocaleString()+'円' : '—'}</td>
+      <td><button class="del-btn" onclick="event.stopPropagation(); deleteProductById(${p.id})">削除</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function calcCpu(p) {
+  const fx = v('fx');
+  const qty = p.qty || 1;
+  const per = x => x / qty;
+  const baseJpy = p.cny * fx;
+  const tariffAmt = baseJpy * ((p.tariff||0)/100);
+  const beforeTax = baseJpy + tariffAmt + per(p.ship||0) + per(p.inspect||0) + per(p.agent||0) + per(p.pack||0) + per(p.insert||0);
+  return beforeTax * (1 + (p.ctax||0)/100);
+}
+
+function selectProductFromList(id) {
+  document.getElementById('product-select').value = id;
+  loadProduct();
+  document.getElementById('product-list-wrap').classList.remove('open');
+}
+
+function deleteProductById(id) {
+  const p = products.find(pr => pr.id === id);
+  if (!p || !confirm(p.name + ' を削除しますか？')) return;
+  products = products.filter(pr => pr.id !== id);
+  if (currentProductId === id) { currentProductId = null; document.getElementById('btn-delete').style.display = 'none'; document.getElementById('product-select').value = ''; }
+  saveAll(); refreshProductSelect(); renderProductList();
+  toast('削除しました');
+  if (s('gas-url')) exportToSheet(true);
+}
+
+// ---- 販売シミュレーション ----
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active',(i===0&&m==='price')||(i===1&&m==='margin')));
+  document.getElementById('price-col-header').textContent  = m==='margin' ? '必要販売価格（円）' : '販売価格（円）';
+  document.getElementById('margin-col-header').textContent = m==='margin' ? '目標利益率（%）'   : '利益率';
+  document.getElementById('sim-hint').textContent = m==='margin'
+    ? '各プラットフォームに目標利益率を入力 → その利益率を達成する必要販売価格を逆算します。'
+    : '各プラットフォームに販売価格を入力 → 利益額・利益率を計算します。';
+  renderPlatformRows(); calc();
+}
+function renderPlatformRows() {
+  document.getElementById('platform-rows').innerHTML = PLATFORMS.map(p => {
+    const priceCell = mode==='price'
+      ? `<input type="number" id="price-${p.id}" placeholder="例: 3980" step="10" min="0">`
+      : `<span id="price-${p.id}" style="font-weight:700">—</span>`;
+    const marginCell = mode==='price'
+      ? `<span id="margin-${p.id}">—</span>`
+      : `<input type="number" id="tmargin-${p.id}" value="30" step="1" min="0" style="width:64px"> <span style="font-size:11px;color:var(--text3)">%</span>`;
+    return `
+    <tr>
+      <td style="font-weight:700">${p.name}</td>
+      <td><span style="font-weight:500">${p.fee}</span> <span style="font-size:11px;color:var(--text3)">%</span></td>
+      <td><input type="number" id="dship-${p.id}" value="0" step="10" min="0"></td>
+      <td id="price-cell-${p.id}">${priceCell}</td>
+      <td id="profit-${p.id}">—</td>
+      <td id="margin-cell-${p.id}">${marginCell}</td>
+      <td id="status-${p.id}">—</td>
+    </tr>`;
+  }).join('');
+  document.querySelectorAll('.ptable input').forEach(el => el.addEventListener('input', calc));
+}
+
+// ---- メイン計算 ----
+function calc() {
+  const fx=v('fx'), cny=v('cny'), qty=v('qty');
+  const per = x => qty>0 ? x/qty : 0;
+  const baseJpy   = cny*fx;
+  const tariffAmt = baseJpy*(v('tariff')/100);
+  const beforeTax = baseJpy+tariffAmt+per(v('ship'))+per(v('inspect'))+per(v('agent'))+per(v('pack'))+per(v('insert'));
+  const ctaxAmt   = beforeTax*(v('ctax')/100);
+  const cpu       = beforeTax+ctaxAmt;
+  const total     = cpu*qty;
+
+  document.getElementById('total-label').textContent = `仕入れ総額（${qty.toLocaleString()}個）`;
+  document.getElementById('tc-total').textContent    = Math.round(total).toLocaleString()+' 円';
+
+  // ---- 仕入原価内訳（総額＋1個あたり）----
+  const yen = n => Math.round(n).toLocaleString()+'円';
+  const rows = [
+    ['仕入れ原価（元×為替）', baseJpy*qty, baseJpy],
+    ['関税',                 tariffAmt*qty, tariffAmt],
+    ['送料',                 v('ship'),    per(v('ship'))],
+    ['検品料',               v('inspect'), per(v('inspect'))],
+    ['代行手数料',           v('agent'),   per(v('agent'))],
+    ['梱包材',               v('pack'),    per(v('pack'))],
+    ['同梱物',               v('insert'),  per(v('insert'))],
+  ];
+  document.getElementById('breakdown').innerHTML =
+    '<div style="overflow-x:auto"><table class="btable">' +
+    '<thead><tr><th>項目</th><th>総額</th><th>1個あたり</th></tr></thead><tbody>' +
+    rows.map(([l,t,u]) => `<tr><td>${l}</td><td>${yen(t)}</td><td>${yen(u)}</td></tr>`).join('') +
+    `<tr class="sub"><td>小計（税抜）</td><td>${yen(beforeTax*qty)}</td><td>${yen(beforeTax)}</td></tr>` +
+    `<tr><td>消費税</td><td>${yen(ctaxAmt*qty)}</td><td>${yen(ctaxAmt)}</td></tr>` +
+    `<tr class="tot"><td>合計（税込・原価）</td><td>${yen(cpu*qty)}</td><td>${yen(cpu)}</td></tr>` +
+    '</tbody></table></div>';
+
+  // ---- プラットフォーム別シミュレーション ----
+  PLATFORMS.forEach(p => {
+    const feePct=p.fee/100, dship=v('dship-'+p.id);
+    let price;
+    if (mode==='margin') {
+      const tm=v('tmargin-'+p.id)/100;
+      const denom=1-feePct-tm;
+      price = denom>0 ? Math.ceil(cpu/denom) : 0;
+      const el=document.getElementById('price-'+p.id);
+      if(el) el.textContent = denom>0 ? Math.round(price).toLocaleString()+'円' : '設定不可';
+    } else {
+      price = v('price-'+p.id);
+    }
+    const profit=price+dship-cpu-price*feePct;
+    const marginPct=price>0?profit/price*100:0;
+    const status=marginPct>=20?'good':marginPct>=10?'ok':'low';
+    document.getElementById('profit-'+p.id).innerHTML=`<span class="${profit>=0?'num-green':'num-red'}">${profit>=0?'+':''}${Math.round(profit).toLocaleString()}円</span>`;
+    if (mode==='price') { const mEl=document.getElementById('margin-'+p.id); if(mEl) mEl.textContent=marginPct.toFixed(1)+'%'; }
+    document.getElementById('status-'+p.id).innerHTML=`<span class="badge ${status==='good'?'green':status==='ok'?'amber':'red'}">${status==='good'?'✓ 利益あり':status==='ok'?'△ 要確認':'✗ 赤字リスク'}</span>`;
+  });
+}
+
+// ---- タブ切替 ----
+function switchView(view) {
+  document.getElementById('view-main').style.display     = view === 'main'     ? '' : 'none';
+  document.getElementById('view-settings').style.display = view === 'settings' ? '' : 'none';
+  document.querySelectorAll('.nav-tab').forEach((t, i) =>
+    t.classList.toggle('active', (i === 0 && view === 'main') || (i === 1 && view === 'settings')));
+  window.scrollTo(0, 0);
+}
+
+// ---- プラットフォーム手数料率（設定） ----
+function loadFees() {
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('ec-fees') || '{}'); } catch(e) { saved = {}; }
+  PLATFORMS.forEach(p => { if (typeof saved[p.id] === 'number') p.fee = saved[p.id]; });
+  PLATFORMS.forEach(p => setField('fee-set-'+p.id, p.fee));
+}
+function saveFees() {
+  const obj = {};
+  PLATFORMS.forEach(p => {
+    const val = parseFloat(document.getElementById('fee-set-'+p.id).value);
+    if (!isNaN(val)) p.fee = val;
+    obj[p.id] = p.fee;
+  });
+  localStorage.setItem('ec-fees', JSON.stringify(obj));
+  const st = document.getElementById('fees-saved-status');
+  if (st) st.textContent = '保存しました ' + new Date().toLocaleTimeString('ja-JP');
+  renderPlatformRows();
+  calc();
+  toast('手数料率を保存しました');
+}
+
+// ---- Googleスプレッドシート連携 ----
+function loadGasConfig() {
+  setField('gas-url',   localStorage.getItem('ec-gas-url')   || '');
+  setField('sheet-url', localStorage.getItem('ec-sheet-url') || '');
+}
+function saveGasConfig() {
+  localStorage.setItem('ec-gas-url',   s('gas-url'));
+  localStorage.setItem('ec-sheet-url', s('sheet-url'));
+  const st = document.getElementById('gas-saved-status');
+  if (st) st.textContent = '保存しました ' + new Date().toLocaleTimeString('ja-JP');
+  toast('設定を保存しました');
+}
+function toggleGasHelp() {
+  const el = document.getElementById('gas-help');
+  el.style.display = el.style.display === 'none' ? '' : 'none';
+}
+function openSheet() {
+  const u = s('sheet-url');
+  if (!u) { toast('スプレッドシートURLを入力してください'); return; }
+  window.open(u, '_blank');
+}
+function buildExportPayload() {
+  const fx = v('fx');
+  return {
+    fx,
+    exportedAt: new Date().toLocaleString('ja-JP'),
+    products: products.map(p => {
+      const cpu = calcCpu(p);
+      return { ...p, fx, cpu: Math.round(cpu), total: Math.round(cpu * (p.qty || 0)) };
+    }),
+    records,
+  };
+}
+function mergeProducts(incoming) {
+  let added = 0, updated = 0, seq = 0;
+  incoming.forEach(ip => {
+    if (!ip.name && !ip.code) return;
+    const fields = {
+      name: ip.name || '', code: ip.code || '',
+      cny: +ip.cny || 0, qty: +ip.qty || 0, tariff: +ip.tariff || 0,
+      ship: +ip.ship || 0, inspect: +ip.inspect || 0, agent: +ip.agent || 0,
+      pack: +ip.pack || 0, insert: +ip.insert || 0, ctax: +ip.ctax || 0,
+    };
+    let idx = -1;
+    if (ip.code) idx = products.findIndex(p => p.code && p.code === ip.code);
+    if (idx < 0 && ip.name) idx = products.findIndex(p => p.name === ip.name);
+    if (idx >= 0) {
+      products[idx] = { ...products[idx], ...fields, updatedAt: new Date().toLocaleDateString('ja-JP') };
+      updated++;
+    } else {
+      products.unshift({
+        id: Date.now() + (seq++),
+        ...fields,
+        createdAt: ip.createdAt || new Date().toLocaleDateString('ja-JP'),
+        updatedAt: ip.updatedAt || new Date().toLocaleDateString('ja-JP'),
+      });
+      added++;
+    }
+  });
+  return { added, updated };
+}
+
+async function importFromSheet() {
+  const url = s('gas-url');
+  if (!url) { toast('GAS WebアプリURLを入力してください（設定方法を参照）'); return; }
+  const statusEl = document.getElementById('gas-status');
+  statusEl.textContent = '読み込み中…';
+  try {
+    const res = await fetch(url, { method: 'GET' });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || '取得に失敗しました');
+    const list = data.products || [];
+    if (list.length === 0) { statusEl.textContent = '読み込み完了（商品0件）'; toast('シートに商品がありませんでした'); return; }
+    const r = mergeProducts(list);
+    saveAll();
+    refreshProductSelect();
+    renderProductList();
+    statusEl.textContent = `読み込み完了 ${new Date().toLocaleTimeString('ja-JP')}（新規${r.added}件 / 更新${r.updated}件）`;
+    toast(`商品を${r.added + r.updated}件読み込みました`);
+  } catch (e) {
+    statusEl.textContent = '読み込み失敗';
+    toast('読み込みに失敗しました: ' + e.message);
+  }
+}
+
+async function exportToSheet(auto) {
+  const url = s('gas-url');
+  if (!url) { if (!auto) toast('GAS WebアプリURLを入力してください（設定方法を参照）'); return; }
+  if (products.length === 0 && records.length === 0) { if (!auto) toast('書き出すデータがありません'); return; }
+  const statusEl = document.getElementById('gas-status');
+  if (statusEl) statusEl.textContent = '送信中…';
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(buildExportPayload()),
+    });
+    if (statusEl) statusEl.textContent = `書き出し送信 ${new Date().toLocaleTimeString('ja-JP')}（商品${products.length}件 / 送料${records.length}件）`;
+    toast(auto ? 'スプレッドシートに転記しました' : 'スプレッドシートに書き出しました');
+  } catch (e) {
+    if (statusEl) statusEl.textContent = '送信失敗';
+    toast('スプレッドシートへの転記に失敗しました: ' + e.message);
+  }
+}
+
+// ---- 初期化 ----
+document.querySelectorAll('#fx,#cny,#qty,#tariff,#ship,#inspect,#agent,#pack,#insert,#ctax')
+  .forEach(el => el.addEventListener('input', calc));
+
+loadAll();
+loadGasConfig();
+loadFees();
+refreshProductSelect();
+renderPlatformRows();
+calc();
+</script>
+</body>
+</html>
