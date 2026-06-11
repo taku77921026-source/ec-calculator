@@ -1,0 +1,7 @@
+# 公開リポジトリにはアプリ本体（index.html）のみを上げる。
+# 以下はローカル管理のみ（GitHubには公開しない）。
+gas/
+docs/
+_旧版アーカイブ/
+.DS_Store
+.obsidian/
