@@ -47,6 +47,8 @@
   .field input:not([type="checkbox"]), .field select { padding: 8px 10px; font-size: 14px; font-family: inherit; border: 1px solid #e6d9a8; border-radius: var(--radius); background: #fff8e1; color: var(--text); width: 100%; transition: border-color .15s; }
   .field input:not([type="checkbox"]):focus, .field select:focus { outline: none; border-color: var(--accent); background: #fffdf5; }
   .field input.unconfirmed { background: var(--red-bg); border-color: #fecaca; color: var(--red); }
+  .field input.empty { border-style: dashed; border-color: #d8a200; background: #fffaf0; }
+  .ptable input.empty { border-style: dashed; border-color: #d8a200; background: #fffaf0; }
   .chk { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text3); cursor: pointer; user-select: none; }
   .chk input[type="checkbox"] { width: auto; margin: 0; cursor: pointer; accent-color: var(--red); }
   .chk.on { color: var(--red); font-weight: 700; }
@@ -205,8 +207,8 @@
     <hr class="divider">
     <div class="group-label">数量・コスト</div>
     <p style="font-size:12px; color:var(--text2); margin:0 0 10px;">
-      <span style="display:inline-block;width:11px;height:11px;background:#fff8e1;border:1px solid #e6d9a8;border-radius:2px;vertical-align:-1px;"></span>
-      黄色＝入力欄。数値が不明な項目は「<strong>未確認</strong>」にチェックすると、0として計算します。
+      <span style="display:inline-block;width:11px;height:11px;background:#fffaf0;border:1px dashed #d8a200;border-radius:2px;vertical-align:-1px;"></span>
+      破線＝<strong>未記入</strong>の欄。数値が不明な項目は「<strong>未確認</strong>」にチェックすると0として計算します。
     </p>
     <div class="grid3" style="margin-bottom:14px">
       <div class="field"><label>為替レート（1元 = 円）</label><input id="fx" type="text" inputmode="decimal" placeholder="例: 25"></div>
@@ -615,8 +617,20 @@ function toggleUnconfirmed(id) {
   calc();
 }
 
+// ---- 未記入マーク（空欄の入力欄を破線で表示） ----
+function markEmpty() {
+  ['fx'].concat(UC_FIELDS).forEach(id => {
+    const el = document.getElementById(id);
+    const box = document.getElementById('uc-' + id);
+    if (!el) return;
+    const empty = el.value.trim() === '' && !(box && box.checked);
+    el.classList.toggle('empty', empty);
+  });
+}
+
 // ---- メイン計算 ----
 function calc() {
+  markEmpty();
   const fx=v('fx'), cny=v('cny'), qty=v('qty');
   const per = x => qty>0 ? x/qty : 0;
   const baseJpy   = cny*fx;
