@@ -233,10 +233,13 @@
         <span class="lbl" id="total-label">仕入れ総額（100個）</span>
         <span class="val" id="tc-total">—</span>
       </div>
-      <button class="btn btn-accent" onclick="saveProduct()" style="height:auto; padding:14px 24px; font-size:14px;">
-        💾 この商品を登録 / 上書き保存
+      <button class="btn btn-accent" onclick="saveNew()" style="height:auto; padding:14px 22px; font-size:14px;">
+        ＋ 新規保存
       </button>
-      <button class="btn btn-neutral" onclick="clearForm()" style="height:auto; padding:14px 20px; font-size:14px;">
+      <button class="btn btn-primary" id="btn-overwrite" onclick="saveOverwrite()" style="height:auto; padding:14px 22px; font-size:14px;">
+        💾 上書き保存
+      </button>
+      <button class="btn btn-neutral" onclick="clearForm()" style="height:auto; padding:14px 18px; font-size:14px;">
         🗑 入力をクリア
       </button>
     </div>
@@ -428,25 +431,33 @@ function getProductData() {
   };
 }
 
-function saveProduct() {
+function saveNew() {
   const data = getProductData();
   if (!data.name) { toast('商品名を入力してください'); return; }
+  const newProd = { id: Date.now(), ...data, createdAt: new Date().toLocaleDateString('ja-JP'), updatedAt: new Date().toLocaleDateString('ja-JP') };
+  products.unshift(newProd);
+  currentProductId = newProd.id;
+  toast('商品を新規保存しました');
+  afterSave();
+}
 
-  if (currentProductId) {
-    const idx = products.findIndex(p => p.id === currentProductId);
-    if (idx >= 0) { products[idx] = { ...products[idx], ...data, updatedAt: new Date().toLocaleDateString('ja-JP') }; toast('商品を上書き保存しました'); }
-  } else {
-    const newProd = { id: Date.now(), ...data, createdAt: new Date().toLocaleDateString('ja-JP'), updatedAt: new Date().toLocaleDateString('ja-JP') };
-    products.unshift(newProd);
-    currentProductId = newProd.id;
-    toast('商品を新規登録しました');
-  }
+function saveOverwrite() {
+  const data = getProductData();
+  if (!data.name) { toast('商品名を入力してください'); return; }
+  if (!currentProductId) { toast('上書きする商品が選択されていません（「新規保存」をお使いください）'); return; }
+  const idx = products.findIndex(p => p.id === currentProductId);
+  if (idx < 0) { toast('対象の商品が見つかりません'); return; }
+  products[idx] = { ...products[idx], ...data, updatedAt: new Date().toLocaleDateString('ja-JP') };
+  toast('商品を上書き保存しました');
+  afterSave();
+}
+
+function afterSave() {
   saveAll();
   refreshProductSelect();
   renderProductList();
   document.getElementById('btn-delete').style.display = '';
-
-  // スプレッドシート連携が設定済みなら、登録と同時に自動転記
+  // スプレッドシート連携が設定済みなら、保存と同時に自動転記
   if (s('gas-url')) exportToSheet(true);
 }
 
