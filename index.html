@@ -662,14 +662,13 @@ function calc() {
     ['梱包材',               v('pack'),    per(v('pack')), uc('pack')],
     ['同梱物',               v('insert'),  per(v('insert')), uc('insert')],
   ];
-  const anyUC = rows.some(r => r[3]) || uc('ctax') || uc('qty');
   document.getElementById('breakdown').innerHTML =
     '<div style="overflow-x:auto"><table class="btable">' +
     '<thead><tr><th>項目</th><th>総額</th><th>1個あたり</th></tr></thead><tbody>' +
     rows.map(([l,t,u,f]) => `<tr><td>${l}${tag(f)}</td><td>${yen(t)}</td><td>${yen(u)}</td></tr>`).join('') +
-    `<tr class="sub"><td>小計（税抜）${tag(anyUC)}</td><td>${yen(beforeTax*qty)}</td><td>${yen(beforeTax)}</td></tr>` +
+    `<tr class="sub"><td>小計（税抜）</td><td>${yen(beforeTax*qty)}</td><td>${yen(beforeTax)}</td></tr>` +
     `<tr><td>消費税${tag(uc('ctax'))}</td><td>${yen(ctaxAmt*qty)}</td><td>${yen(ctaxAmt)}</td></tr>` +
-    `<tr class="tot"><td>合計（税込・原価）${tag(anyUC)}</td><td>${yen(cpu*qty)}</td><td>${yen(cpu)}</td></tr>` +
+    `<tr class="tot"><td>合計（税込・原価）</td><td>${yen(cpu*qty)}</td><td>${yen(cpu)}</td></tr>` +
     '</tbody></table></div>';
 
   // ---- プラットフォーム別シミュレーション ----
