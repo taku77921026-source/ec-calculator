@@ -86,6 +86,7 @@
   .btable td:first-child { text-align: left; color: var(--text2); }
   .btable tr.sub td { font-weight: 700; color: var(--text); background: var(--surface2); }
   .btable tr.tot td { font-weight: 700; background: var(--accent-bg); color: var(--accent-text); border-bottom: none; font-size: 14px; }
+  .uc-badge { display: inline-block; margin-left: 8px; font-size: 10px; font-weight: 700; color: var(--red); background: var(--red-bg); border: 1px solid #fecaca; border-radius: 10px; padding: 1px 7px; vertical-align: 1px; }
 
   /* トップナビ（計算ツール / 設定） */
   .navtabs { display: flex; gap: 6px; margin-bottom: 20px; }
@@ -406,12 +407,8 @@ function toast(msg) {
 }
 
 // ---- フォームから値を読む ----
-function v(id) {
-  const box = document.getElementById('uc-' + id);
-  if (box && box.checked) return 0;            // 未確認は0扱い（計算用）
-  return parseFloat(document.getElementById(id).value) || 0;
-}
-function rawv(id) { return parseFloat(document.getElementById(id).value) || 0; } // 未確認でも入力値を保持
+function v(id) { return parseFloat(document.getElementById(id).value) || 0; }   // 未確認でも入力値を使う
+function rawv(id) { return parseFloat(document.getElementById(id).value) || 0; }
 function s(id) { return document.getElementById(id).value.trim(); }
 
 // ---- フォームに値をセット ----
@@ -545,8 +542,7 @@ function renderProductList() {
 
 function calcCpu(p) {
   const fx = v('fx');
-  const uc = p.unconfirmed || {};
-  const g = k => uc[k] ? 0 : (Number(p[k]) || 0);   // 未確認は0として計算
+  const g = k => Number(p[k]) || 0;   // 未確認でも入力値を使って計算
   const qty = g('qty') || 1;
   const per = x => x / qty;
   const baseJpy = g('cny') * fx;
@@ -610,8 +606,7 @@ function applyUnconfirmed(id) {
   const box = document.getElementById('uc-' + id);
   const el = document.getElementById(id);
   if (!box || !el) return;
-  el.disabled = box.checked;
-  el.classList.toggle('unconfirmed', box.checked);
+  el.classList.toggle('unconfirmed', box.checked);   // 値は使うが赤＋未確認バッジで明示
   box.parentElement.classList.toggle('on', box.checked);
 }
 function toggleUnconfirmed(id) {
@@ -655,22 +650,26 @@ function calc() {
 
   // ---- 仕入原価内訳（総額＋1個あたり）----
   const yen = n => Math.round(n).toLocaleString()+'円';
+  const uc = id => !!(document.getElementById('uc-'+id) && document.getElementById('uc-'+id).checked);
+  const BADGE = '<span class="uc-badge">未確認</span>';
+  const tag = on => on ? BADGE : '';
   const rows = [
-    ['仕入れ原価（元×為替）', baseJpy*qty, baseJpy],
-    ['関税',                 tariffAmt*qty, tariffAmt],
-    ['送料',                 v('ship'),    per(v('ship'))],
-    ['検品料',               v('inspect'), per(v('inspect'))],
-    ['代行手数料',           v('agent'),   per(v('agent'))],
-    ['梱包材',               v('pack'),    per(v('pack'))],
-    ['同梱物',               v('insert'),  per(v('insert'))],
+    ['仕入れ原価（元×為替）', baseJpy*qty, baseJpy, uc('cny')],
+    ['関税',                 tariffAmt*qty, tariffAmt, uc('tariff')],
+    ['送料',                 v('ship'),    per(v('ship')), uc('ship')],
+    ['検品料',               v('inspect'), per(v('inspect')), uc('inspect')],
+    ['代行手数料',           v('agent'),   per(v('agent')), uc('agent')],
+    ['梱包材',               v('pack'),    per(v('pack')), uc('pack')],
+    ['同梱物',               v('insert'),  per(v('insert')), uc('insert')],
   ];
+  const anyUC = rows.some(r => r[3]) || uc('ctax') || uc('qty');
   document.getElementById('breakdown').innerHTML =
     '<div style="overflow-x:auto"><table class="btable">' +
     '<thead><tr><th>項目</th><th>総額</th><th>1個あたり</th></tr></thead><tbody>' +
-    rows.map(([l,t,u]) => `<tr><td>${l}</td><td>${yen(t)}</td><td>${yen(u)}</td></tr>`).join('') +
-    `<tr class="sub"><td>小計（税抜）</td><td>${yen(beforeTax*qty)}</td><td>${yen(beforeTax)}</td></tr>` +
-    `<tr><td>消費税</td><td>${yen(ctaxAmt*qty)}</td><td>${yen(ctaxAmt)}</td></tr>` +
-    `<tr class="tot"><td>合計（税込・原価）</td><td>${yen(cpu*qty)}</td><td>${yen(cpu)}</td></tr>` +
+    rows.map(([l,t,u,f]) => `<tr><td>${l}${tag(f)}</td><td>${yen(t)}</td><td>${yen(u)}</td></tr>`).join('') +
+    `<tr class="sub"><td>小計（税抜）${tag(anyUC)}</td><td>${yen(beforeTax*qty)}</td><td>${yen(beforeTax)}</td></tr>` +
+    `<tr><td>消費税${tag(uc('ctax'))}</td><td>${yen(ctaxAmt*qty)}</td><td>${yen(ctaxAmt)}</td></tr>` +
+    `<tr class="tot"><td>合計（税込・原価）${tag(anyUC)}</td><td>${yen(cpu*qty)}</td><td>${yen(cpu)}</td></tr>` +
     '</tbody></table></div>';
 
   // ---- プラットフォーム別シミュレーション ----
@@ -754,8 +753,7 @@ function buildExportPayload() {
     exportedAt: new Date().toLocaleString('ja-JP'),
     products: products.map(p => {
       const cpu = calcCpu(p);
-      const g = k => (p.unconfirmed && p.unconfirmed[k]) ? 0 : (Number(p[k]) || 0);
-      const out = { ...p, fx, cpu: Math.round(cpu), total: Math.round(cpu * (g('qty'))) };
+      const out = { ...p, fx, cpu: Math.round(cpu), total: Math.round(cpu * (Number(p.qty) || 0)) };
       if (p.unconfirmed) Object.keys(p.unconfirmed).forEach(f => {
         if (p.unconfirmed[f]) { const raw = Number(p[f]) || 0; out[f] = raw ? ('未確認（' + raw + '）') : '未確認'; }
       });
