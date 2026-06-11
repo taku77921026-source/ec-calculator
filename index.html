@@ -45,9 +45,9 @@
   .field { display: flex; flex-direction: column; gap: 5px; }
   .field label { font-size: 12px; color: var(--text2); }
   .field input:not([type="checkbox"]), .field select { padding: 8px 10px; font-size: 14px; font-family: inherit; border: 1px solid #e6d9a8; border-radius: var(--radius); background: #fff8e1; color: var(--text); width: 100%; transition: border-color .15s; }
-  .field input:not([type="checkbox"]):focus, .field select:focus { outline: none; border-color: var(--accent); background: #fffdf5; }
+  .field input:not([type="checkbox"]):focus, .field select:focus { outline: none; border-color: #d8a200; background: #fffdf5; }
   .field input.empty { border-style: dashed; border-color: #d8a200; background: #fffaf0; }
-  .field input.filled { border-color: var(--accent); background: var(--accent-bg); color: var(--accent-text); }
+  .field input.filled { border-color: #d8a200; background: #fff8e1; color: var(--text); }
   .field input.unconfirmed { background: var(--red-bg); border-color: #fecaca; color: var(--red); }
   .ptable input.empty { border-style: dashed; border-color: #d8a200; background: #fffaf0; }
   .chk { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text3); cursor: pointer; user-select: none; }
@@ -107,7 +107,7 @@
   .ptable td { padding: 8px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   .ptable tr:last-child td { border-bottom: none; }
   .ptable input { padding: 5px 8px; font-size: 13px; font-family: inherit; border: 1px solid #e6d9a8; border-radius: var(--radius); background: #fff8e1; color: var(--text); width: 76px; transition: border-color .15s; }
-  .ptable input:focus { outline: none; border-color: var(--accent); background: #fffdf5; }
+  .ptable input:focus { outline: none; border-color: #d8a200; background: #fffdf5; }
 
   .badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
   .badge.green { background: var(--green-bg); color: var(--green); }
@@ -182,6 +182,11 @@
 
     <!-- 商品セレクター -->
     <div class="group-label">商品</div>
+    <div class="product-info-row">
+      <div class="field"><label>商品名</label><input id="prod-name" type="text" placeholder="例: オリジナルボトル 500ml"></div>
+      <div class="field"><label>商品コード（SKU）</label><input id="prod-code" type="text" placeholder="例: BTL-001"></div>
+    </div>
+
     <div class="product-bar">
       <div class="field">
         <label>登録済み商品から読み込む</label>
@@ -191,11 +196,6 @@
       </div>
       <button class="btn btn-neutral" onclick="toggleProductList()" title="登録済み商品一覧">一覧</button>
       <button class="btn btn-danger" id="btn-delete" onclick="deleteProduct()" style="display:none">削除</button>
-    </div>
-
-    <div class="product-info-row">
-      <div class="field"><label>商品名</label><input id="prod-name" type="text" placeholder="例: オリジナルボトル 500ml"></div>
-      <div class="field"><label>商品コード（SKU）</label><input id="prod-code" type="text" placeholder="例: BTL-001"></div>
     </div>
 
     <!-- 商品一覧テーブル（トグル） -->
@@ -210,27 +210,27 @@
     <div class="group-label">数量・コスト</div>
     <p style="font-size:12px; color:var(--text2); margin:0 0 10px;">
       <span style="display:inline-block;width:11px;height:11px;background:#fffaf0;border:1px dashed #d8a200;border-radius:2px;vertical-align:-1px;"></span> 破線＝未記入
-      　<span style="display:inline-block;width:11px;height:11px;background:var(--accent-bg);border:1px solid var(--accent);border-radius:2px;vertical-align:-1px;"></span> 青＝記入済み。
+      　<span style="display:inline-block;width:11px;height:11px;background:#fff8e1;border:1px solid #d8a200;border-radius:2px;vertical-align:-1px;"></span> 実線＝記入済み。
       数値が不明な項目は「<strong>未確認</strong>」にチェックすると0として計算します。
     </p>
     <div class="grid3" style="margin-bottom:14px">
-      <div class="field"><label>為替レート（1元 = 円）</label><input id="fx" type="text" inputmode="decimal" placeholder="例: 25"></div>
-      <div class="field"><label>元価格（元）</label><input id="cny" type="text" inputmode="decimal" placeholder="例: 150"><label class="chk"><input type="checkbox" id="uc-cny" onchange="toggleUnconfirmed('cny')">未確認</label></div>
-      <div class="field"><label>仕入れ数量（個）</label><input id="qty" type="text" inputmode="decimal" placeholder="例: 100"><label class="chk"><input type="checkbox" id="uc-qty" onchange="toggleUnconfirmed('qty')">未確認</label></div>
-      <div class="field"><label>関税（%）</label><input id="tariff" type="text" inputmode="decimal" placeholder="例: 3"><label class="chk"><input type="checkbox" id="uc-tariff" onchange="toggleUnconfirmed('tariff')">未確認</label></div>
+      <div class="field"><label>為替レート（1元 = 円）</label><input id="fx" type="text" inputmode="decimal" class="js-num" placeholder="例: 25"><label class="chk"><input type="checkbox" id="uc-fx" onchange="toggleUnconfirmed('fx')">未確認</label></div>
+      <div class="field"><label>元価格（元）</label><input id="cny" type="text" inputmode="decimal" class="js-num" placeholder="例: 150"><label class="chk"><input type="checkbox" id="uc-cny" onchange="toggleUnconfirmed('cny')">未確認</label></div>
+      <div class="field"><label>仕入れ数量（個）</label><input id="qty" type="text" inputmode="decimal" class="js-num" placeholder="例: 100"><label class="chk"><input type="checkbox" id="uc-qty" onchange="toggleUnconfirmed('qty')">未確認</label></div>
+      <div class="field"><label>関税（%）</label><input id="tariff" type="text" inputmode="decimal" class="js-num" placeholder="例: 3"><label class="chk"><input type="checkbox" id="uc-tariff" onchange="toggleUnconfirmed('tariff')">未確認</label></div>
     </div>
 
     <hr class="divider">
     <div class="group-label">諸費用（今回の仕入れ総額で入力）</div>
     <div class="grid3" style="margin-bottom:10px">
-      <div class="field"><label>送料（円 / 総額）</label><input id="ship" type="text" inputmode="decimal" placeholder="例: 18000"><label class="chk"><input type="checkbox" id="uc-ship" onchange="toggleUnconfirmed('ship')">未確認</label></div>
-      <div class="field"><label>検品料（円 / 総額）</label><input id="inspect" type="text" inputmode="decimal" placeholder="例: 3000"><label class="chk"><input type="checkbox" id="uc-inspect" onchange="toggleUnconfirmed('inspect')">未確認</label></div>
-      <div class="field"><label>代行手数料（円 / 総額）</label><input id="agent" type="text" inputmode="decimal" placeholder="例: 5000"><label class="chk"><input type="checkbox" id="uc-agent" onchange="toggleUnconfirmed('agent')">未確認</label></div>
+      <div class="field"><label>送料（円 / 総額）</label><input id="ship" type="text" inputmode="decimal" class="js-num" placeholder="例: 18000"><label class="chk"><input type="checkbox" id="uc-ship" onchange="toggleUnconfirmed('ship')">未確認</label></div>
+      <div class="field"><label>検品料（円 / 総額）</label><input id="inspect" type="text" inputmode="decimal" class="js-num" placeholder="例: 3000"><label class="chk"><input type="checkbox" id="uc-inspect" onchange="toggleUnconfirmed('inspect')">未確認</label></div>
+      <div class="field"><label>代行手数料（円 / 総額）</label><input id="agent" type="text" inputmode="decimal" class="js-num" placeholder="例: 5000"><label class="chk"><input type="checkbox" id="uc-agent" onchange="toggleUnconfirmed('agent')">未確認</label></div>
     </div>
     <div class="grid3">
-      <div class="field"><label>梱包材（円 / 総額）</label><input id="pack" type="text" inputmode="decimal" placeholder="例: 4000"><label class="chk"><input type="checkbox" id="uc-pack" onchange="toggleUnconfirmed('pack')">未確認</label></div>
-      <div class="field"><label>同梱物（円 / 総額）</label><input id="insert" type="text" inputmode="decimal" placeholder="例: 2000"><label class="chk"><input type="checkbox" id="uc-insert" onchange="toggleUnconfirmed('insert')">未確認</label></div>
-      <div class="field"><label>消費税（%）</label><input id="ctax" type="text" inputmode="decimal" placeholder="例: 10"><label class="chk"><input type="checkbox" id="uc-ctax" onchange="toggleUnconfirmed('ctax')">未確認</label></div>
+      <div class="field"><label>梱包材（円 / 総額）</label><input id="pack" type="text" inputmode="decimal" class="js-num" placeholder="例: 4000"><label class="chk"><input type="checkbox" id="uc-pack" onchange="toggleUnconfirmed('pack')">未確認</label></div>
+      <div class="field"><label>同梱物（円 / 総額）</label><input id="insert" type="text" inputmode="decimal" class="js-num" placeholder="例: 2000"><label class="chk"><input type="checkbox" id="uc-insert" onchange="toggleUnconfirmed('insert')">未確認</label></div>
+      <div class="field"><label>消費税（%）</label><input id="ctax" type="text" inputmode="decimal" class="js-num" placeholder="例: 10"><label class="chk"><input type="checkbox" id="uc-ctax" onchange="toggleUnconfirmed('ctax')">未確認</label></div>
     </div>
 
     <div style="display:flex; gap:10px; margin-top:16px; align-items:center; flex-wrap:wrap;">
@@ -406,15 +406,50 @@ function toast(msg) {
   setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-// ---- フォームから値を読む ----
-function v(id) { return parseFloat(document.getElementById(id).value) || 0; }   // 未確認でも入力値を使う
-function rawv(id) { return parseFloat(document.getElementById(id).value) || 0; }
+// ---- フォームから値を読む（カンマ除去してから数値化） ----
+function v(id) { return parseFloat(String(document.getElementById(id).value).replace(/,/g, '')) || 0; }   // 未確認でも入力値を使う
+function rawv(id) { return parseFloat(String(document.getElementById(id).value).replace(/,/g, '')) || 0; }
 function s(id) { return document.getElementById(id).value.trim(); }
+
+// ---- 数値入力の整形（数値以外を除去 + 3桁カンマ） ----
+function formatNumberStr(str) {
+  if (str == null) return '';
+  let t = String(str).replace(/[^0-9.]/g, '');           // 数字と小数点のみ許可
+  const dot = t.indexOf('.');
+  if (dot !== -1) t = t.slice(0, dot + 1) + t.slice(dot + 1).replace(/\./g, ''); // 小数点は1つだけ
+  if (t === '') return '';
+  let [intp, decp] = t.split('.');
+  intp = intp.replace(/^0+(?=\d)/, '') || '0';           // 先頭ゼロ除去
+  intp = intp.replace(/\B(?=(\d{3})+(?!\d))/g, ',');     // 3桁カンマ
+  return decp !== undefined ? intp + '.' + decp : intp;
+}
+function attachNumberFormat(el) {
+  el.addEventListener('input', function() {
+    const old = el.value;
+    const caret = el.selectionStart;
+    const before = old.slice(0, caret).replace(/[^0-9.]/g, '').length;  // カーソルより前の有効文字数
+    const formatted = formatNumberStr(old);
+    if (formatted === old) return;
+    el.value = formatted;
+    let seen = 0, pos = formatted.length;
+    if (before === 0) { pos = 0; }
+    else for (let i = 0; i < formatted.length; i++) {
+      if (/[0-9.]/.test(formatted[i])) seen++;
+      if (seen === before) { pos = i + 1; break; }
+    }
+    try { el.setSelectionRange(pos, pos); } catch (e) {}
+  });
+}
 
 // ---- フォームに値をセット ----
 function setField(id, val) {
   const el = document.getElementById(id);
-  if (el) el.value = val ?? '';
+  if (!el) return;
+  if (el.classList.contains('js-num') && val !== '' && val != null) {
+    el.value = formatNumberStr(String(val));
+  } else {
+    el.value = val ?? '';
+  }
 }
 
 // ---- 商品マスター ----
@@ -581,27 +616,30 @@ function setMode(m) {
 function renderPlatformRows() {
   document.getElementById('platform-rows').innerHTML = PLATFORMS.map(p => {
     const priceCell = mode==='price'
-      ? `<input type="number" id="price-${p.id}" placeholder="例: 3980" step="10" min="0">`
+      ? `<input type="text" inputmode="decimal" class="js-num" id="price-${p.id}" placeholder="例: 3,980">`
       : `<span id="price-${p.id}" style="font-weight:700">—</span>`;
     const marginCell = mode==='price'
       ? `<span id="margin-${p.id}">—</span>`
-      : `<input type="number" id="tmargin-${p.id}" value="30" step="1" min="0" style="width:64px"> <span style="font-size:11px;color:var(--text3)">%</span>`;
+      : `<input type="text" inputmode="decimal" class="js-num" id="tmargin-${p.id}" value="30" style="width:64px"> <span style="font-size:11px;color:var(--text3)">%</span>`;
     return `
     <tr>
       <td style="font-weight:700">${p.name}</td>
       <td><span style="font-weight:500">${p.fee}</span> <span style="font-size:11px;color:var(--text3)">%</span></td>
-      <td><input type="number" id="dship-${p.id}" value="0" step="10" min="0"></td>
+      <td><input type="text" inputmode="decimal" class="js-num" id="dship-${p.id}" value="0"></td>
       <td id="price-cell-${p.id}">${priceCell}</td>
       <td id="profit-${p.id}">—</td>
       <td id="margin-cell-${p.id}">${marginCell}</td>
       <td id="status-${p.id}">—</td>
     </tr>`;
   }).join('');
-  document.querySelectorAll('.ptable input').forEach(el => el.addEventListener('input', calc));
+  document.querySelectorAll('.ptable input').forEach(el => {
+    if (el.classList.contains('js-num')) attachNumberFormat(el);
+    el.addEventListener('input', calc);
+  });
 }
 
 // ---- 未確認チェックボックス ----
-const UC_FIELDS = ['cny','qty','tariff','ship','inspect','agent','pack','insert','ctax'];
+const UC_FIELDS = ['fx','cny','qty','tariff','ship','inspect','agent','pack','insert','ctax'];
 function applyUnconfirmed(id) {
   const box = document.getElementById('uc-' + id);
   const el = document.getElementById(id);
@@ -615,7 +653,7 @@ function toggleUnconfirmed(id) {
 }
 
 // ---- 入力欄の状態表示（未記入＝破線 / 記入済み＝青 / 未確認＝赤） ----
-const MARK_FIELDS = ['prod-name','prod-code','fx'].concat(UC_FIELDS);
+const MARK_FIELDS = ['prod-name','prod-code'].concat(UC_FIELDS);
 function markFields() {
   MARK_FIELDS.forEach(id => {
     const el = document.getElementById(id);
@@ -842,6 +880,7 @@ async function exportToSheet(auto) {
 }
 
 // ---- 初期化 ----
+document.querySelectorAll('.js-num').forEach(attachNumberFormat);
 document.querySelectorAll('#prod-name,#prod-code,#fx,#cny,#qty,#tariff,#ship,#inspect,#agent,#pack,#insert,#ctax')
   .forEach(el => el.addEventListener('input', calc));
 
