@@ -716,7 +716,9 @@ function buildExportPayload() {
     exportedAt: new Date().toLocaleString('ja-JP'),
     products: products.map(p => {
       const cpu = calcCpu(p);
-      return { ...p, fx, cpu: Math.round(cpu), total: Math.round(cpu * (p.qty || 0)) };
+      const out = { ...p, fx, cpu: Math.round(cpu), total: Math.round(cpu * (p.qty || 0)) };
+      if (p.unconfirmed) Object.keys(p.unconfirmed).forEach(f => { if (p.unconfirmed[f]) out[f] = '未確認'; });
+      return out;
     }),
     records,
   };
@@ -725,12 +727,13 @@ function mergeProducts(incoming) {
   let added = 0, updated = 0, seq = 0;
   incoming.forEach(ip => {
     if (!ip.name && !ip.code) return;
-    const fields = {
-      name: ip.name || '', code: ip.code || '',
-      cny: +ip.cny || 0, qty: +ip.qty || 0, tariff: +ip.tariff || 0,
-      ship: +ip.ship || 0, inspect: +ip.inspect || 0, agent: +ip.agent || 0,
-      pack: +ip.pack || 0, insert: +ip.insert || 0, ctax: +ip.ctax || 0,
-    };
+    const fields = { name: ip.name || '', code: ip.code || '' };
+    const uc = {};
+    ['cny','qty','tariff','ship','inspect','agent','pack','insert','ctax'].forEach(f => {
+      if (ip[f] === '未確認') { fields[f] = 0; uc[f] = true; }
+      else { fields[f] = +ip[f] || 0; }
+    });
+    fields.unconfirmed = uc;
     let idx = -1;
     if (ip.code) idx = products.findIndex(p => p.code && p.code === ip.code);
     if (idx < 0 && ip.name) idx = products.findIndex(p => p.name === ip.name);
