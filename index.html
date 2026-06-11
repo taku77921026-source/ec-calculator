@@ -94,6 +94,19 @@
   .nav-tab:hover { background: var(--surface2); }
   .nav-tab.active { background: var(--accent-bg); color: var(--accent-text); border-color: #bfdbfe; font-weight: 700; }
 
+  /* 使い方 */
+  .howto-steps { counter-reset: step; list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+  .howto-steps li { position: relative; padding: 12px 14px 12px 52px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); font-size: 13px; line-height: 1.7; }
+  .howto-steps li::before { counter-increment: step; content: counter(step); position: absolute; left: 12px; top: 12px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .howto-steps li strong { font-size: 14px; color: var(--text); }
+  .howto-steps li span { color: var(--text2); }
+  .howto-legend, .howto-modes, .howto-save { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 13px; line-height: 1.7; color: var(--text2); }
+  .howto-legend li { display: flex; align-items: flex-start; gap: 8px; }
+  .howto-legend .sw { flex: none; width: 16px; height: 16px; border-radius: 3px; margin-top: 2px; }
+  .howto-modes li, .howto-save li { padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); }
+  .howto-modes li strong, .howto-save li strong, .howto-legend li strong { color: var(--text); }
+  .howto-modes li span { color: var(--text2); }
+
   /* タブ */
   .tabs { display: flex; gap: 6px; margin-bottom: 14px; }
   .tab { padding: 6px 14px; font-size: 13px; font-family: inherit; border: 1px solid var(--border2); border-radius: 20px; cursor: pointer; background: transparent; color: var(--text2); transition: all .15s; }
@@ -167,8 +180,9 @@
 
   <!-- トップナビ -->
   <div class="navtabs">
-    <button class="nav-tab active" onclick="switchView('main')">計算ツール</button>
-    <button class="nav-tab" onclick="switchView('settings')">設定</button>
+    <button class="nav-tab active" data-view="main" onclick="switchView('main')">計算ツール</button>
+    <button class="nav-tab" data-view="howto" onclick="switchView('howto')">使い方</button>
+    <button class="nav-tab" data-view="settings" onclick="switchView('settings')">設定</button>
   </div>
 
   <!-- ===== 計算ツール ビュー ===== -->
@@ -278,6 +292,82 @@
   </div>
 
   </div><!-- /view-main -->
+
+  <!-- ===== 使い方 ビュー ===== -->
+  <div id="view-howto" class="view" style="display:none">
+
+  <!-- かんたん3ステップ -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">かんたん3ステップ</div>
+    <ol class="howto-steps">
+      <li><strong>仕入れコストを入力</strong><br><span>元価格（元）・為替レート・仕入れ数量と、送料／検品料／代行手数料などの諸費用を入れると、<strong>1個あたりの原価</strong>と<strong>仕入れ総額</strong>が自動で計算されます。</span></li>
+      <li><strong>販売価格を入力</strong><br><span>Amazon・楽天・Yahoo!・Shopify の各欄に売りたい価格を入れると、手数料を差し引いた<strong>利益額・利益率</strong>が出ます。逆に「目標利益率から必要な販売価格を逆算」もできます。</span></li>
+      <li><strong>商品として保存（任意）</strong><br><span>「＋新規保存」で商品マスターに登録。次回からは上のプルダウンで呼び出せます。Googleスプレッドシート連携をすれば自動で台帳にも転記されます。</span></li>
+    </ol>
+  </div>
+
+  <!-- 入力欄の見方 -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:6px">入力欄の見方（色・記号）</div>
+    <p style="font-size:12px; color:var(--text2); margin:0 0 12px;">入力状態がひと目で分かるよう、枠線と色で区別しています。</p>
+    <ul class="howto-legend">
+      <li><span class="sw" style="background:#fffaf0;border:1px dashed #d8a200;"></span><strong>破線</strong>＝未記入。まだ入力していない欄です。</li>
+      <li><span class="sw" style="background:#fff8e1;border:1px solid #d8a200;"></span><strong>実線</strong>＝記入済み。入力が完了した欄です。</li>
+      <li><span class="sw" style="background:var(--red-bg);border:1px solid #fecaca;"></span><strong>赤</strong>＝「未確認」にチェックした欄。値が不明なまま計算したい時に使います（チェックすると赤＋バッジで警告表示）。</li>
+    </ul>
+    <p style="font-size:12px; color:var(--text3); margin:12px 0 0;">
+      ※ 金額・数量の欄は<strong>数字以外は入力できません</strong>。入力中に<strong>自動で3桁カンマ</strong>が入るので、桁の読み間違いを防げます（例: 18000 → 18,000）。
+    </p>
+  </div>
+
+  <!-- 各入力項目 -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">各入力項目の意味</div>
+    <div style="overflow-x:auto">
+      <table class="btable">
+        <thead><tr><th>項目</th><th>入力する内容</th></tr></thead>
+        <tbody>
+          <tr><td>為替レート（1元＝円）</td><td>仕入れ時の為替。元価格を日本円に換算するのに使います。</td></tr>
+          <tr><td>元価格（元）</td><td>商品1個あたりの仕入れ単価（中国元）。</td></tr>
+          <tr><td>仕入れ数量（個）</td><td>今回まとめて仕入れる個数。総額の計算に使います。</td></tr>
+          <tr><td>関税（%）／消費税（%）</td><td>かかる税率。分からなければ「未確認」でも計算できます。</td></tr>
+          <tr><td>送料・検品料・代行手数料・梱包材・同梱物</td><td><strong>今回の仕入れ総額</strong>で入力します（1個あたりではありません）。自動で1個あたりに按分されます。</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 販売シミュレーション -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">販売シミュレーションの2つのモード</div>
+    <ul class="howto-modes">
+      <li><strong>① 販売価格から計算</strong><br><span>各モールに販売価格を入力 → 手数料・販売送料を引いた<strong>利益額と利益率</strong>を表示します。</span></li>
+      <li><strong>② 目標利益率から逆算</strong><br><span>欲しい利益率（%）を入力 → その利益を確保するために<strong>必要な販売価格</strong>を逆算します。</span></li>
+    </ul>
+    <p style="font-size:12px; color:var(--text2); margin:12px 0 0;">
+      ステータスは利益率に応じて自動判定します ―
+      <span class="badge green">✓ 利益あり</span>（20%以上）
+      <span class="badge amber">△ 要確認</span>（10%以上）
+      <span class="badge red">✗ 赤字リスク</span>（10%未満）。
+      手数料率は「設定」タブでモールごとに変更できます。
+    </p>
+  </div>
+
+  <!-- 商品マスター & 連携 -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:14px">商品の保存とスプレッドシート連携</div>
+    <ul class="howto-save">
+      <li><strong>＋新規保存</strong>：今の入力内容を新しい商品として登録します（商品名が必須）。</li>
+      <li><strong>💾上書き保存</strong>：プルダウンで読み込んだ商品に、今の内容を上書きします。</li>
+      <li><strong>🗑入力をクリア</strong>：フォームを空にして、新しい商品の入力を始められます。</li>
+      <li><strong>登録済み商品から読み込む</strong>：過去に保存した商品をプルダウンまたは「一覧」から呼び出します。</li>
+    </ul>
+    <p style="font-size:12px; color:var(--text2); margin:12px 0 0;">
+      「設定」タブでGoogleスプレッドシートと連携すると、商品の<strong>保存・上書き・削除が自動でシートにも反映</strong>され、台帳として蓄積されます。別のPC・ブラウザからもシート経由で過去商品を読み込めます。データは連携しない場合<strong>このブラウザ内にのみ保存</strong>されます。
+    </p>
+  </div>
+
+  </div><!-- /view-howto -->
 
   <!-- ===== 設定 ビュー ===== -->
   <div id="view-settings" class="view" style="display:none">
@@ -733,10 +823,12 @@ function calc() {
 
 // ---- タブ切替 ----
 function switchView(view) {
-  document.getElementById('view-main').style.display     = view === 'main'     ? '' : 'none';
-  document.getElementById('view-settings').style.display = view === 'settings' ? '' : 'none';
-  document.querySelectorAll('.nav-tab').forEach((t, i) =>
-    t.classList.toggle('active', (i === 0 && view === 'main') || (i === 1 && view === 'settings')));
+  ['main','howto','settings'].forEach(v => {
+    const el = document.getElementById('view-' + v);
+    if (el) el.style.display = (v === view) ? '' : 'none';
+  });
+  document.querySelectorAll('.nav-tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.view === view));
   window.scrollTo(0, 0);
 }
 
