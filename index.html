@@ -44,8 +44,9 @@
 
   .field { display: flex; flex-direction: column; gap: 5px; }
   .field label { font-size: 12px; color: var(--text2); }
-  .field input, .field select { padding: 8px 10px; font-size: 14px; font-family: inherit; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface2); color: var(--text); width: 100%; transition: border-color .15s; }
-  .field input:focus, .field select:focus { outline: none; border-color: var(--accent); background: #fff; }
+  .field input, .field select { padding: 8px 10px; font-size: 14px; font-family: inherit; border: 1px solid #e6d9a8; border-radius: var(--radius); background: #fff8e1; color: var(--text); width: 100%; transition: border-color .15s; }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--accent); background: #fffdf5; }
+  .field input.unconfirmed { background: var(--red-bg); border-color: #fecaca; color: var(--red); font-weight: 700; }
 
   hr.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
@@ -98,8 +99,8 @@
   .ptable th { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 8px 10px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
   .ptable td { padding: 8px 8px; border-bottom: 1px solid var(--border); vertical-align: middle; }
   .ptable tr:last-child td { border-bottom: none; }
-  .ptable input { padding: 5px 8px; font-size: 13px; font-family: inherit; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface2); color: var(--text); width: 76px; transition: border-color .15s; }
-  .ptable input:focus { outline: none; border-color: var(--accent); background: #fff; }
+  .ptable input { padding: 5px 8px; font-size: 13px; font-family: inherit; border: 1px solid #e6d9a8; border-radius: var(--radius); background: #fff8e1; color: var(--text); width: 76px; transition: border-color .15s; }
+  .ptable input:focus { outline: none; border-color: var(--accent); background: #fffdf5; }
 
   .badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
   .badge.green { background: var(--green-bg); color: var(--green); }
@@ -200,24 +201,28 @@
 
     <hr class="divider">
     <div class="group-label">数量・コスト</div>
+    <p style="font-size:12px; color:var(--text2); margin:0 0 10px;">
+      <span style="display:inline-block;width:11px;height:11px;background:#fff8e1;border:1px solid #e6d9a8;border-radius:2px;vertical-align:-1px;"></span>
+      黄色＝入力欄。数値が不明な項目は「<strong>未確認</strong>」と入力すると0として計算し、赤く表示します。
+    </p>
     <div class="grid3" style="margin-bottom:14px">
-      <div class="field"><label>為替レート（1元 = 円）</label><input id="fx" type="number" placeholder="例: 25" step="0.5"></div>
-      <div class="field"><label>元価格（元）</label><input id="cny" type="number" placeholder="例: 150" step="1"></div>
-      <div class="field"><label>仕入れ数量（個）</label><input id="qty" type="number" placeholder="例: 100" step="1"></div>
-      <div class="field"><label>関税（%）</label><input id="tariff" type="number" placeholder="例: 3" step="0.5"></div>
+      <div class="field"><label>為替レート（1元 = 円）</label><input id="fx" type="text" inputmode="decimal" placeholder="例: 25"></div>
+      <div class="field"><label>元価格（元）</label><input id="cny" type="text" inputmode="decimal" placeholder="例: 150"></div>
+      <div class="field"><label>仕入れ数量（個）</label><input id="qty" type="text" inputmode="decimal" placeholder="例: 100"></div>
+      <div class="field"><label>関税（%）</label><input id="tariff" type="text" inputmode="decimal" placeholder="例: 3"></div>
     </div>
 
     <hr class="divider">
     <div class="group-label">諸費用（今回の仕入れ総額で入力）</div>
     <div class="grid3" style="margin-bottom:10px">
-      <div class="field"><label>送料（円 / 総額）</label><input id="ship" type="number" placeholder="例: 18000" step="100"></div>
-      <div class="field"><label>検品料（円 / 総額）</label><input id="inspect" type="number" placeholder="例: 3000" step="100"></div>
-      <div class="field"><label>代行手数料（円 / 総額）</label><input id="agent" type="number" placeholder="例: 5000" step="100"></div>
+      <div class="field"><label>送料（円 / 総額）</label><input id="ship" type="text" inputmode="decimal" placeholder="例: 18000"></div>
+      <div class="field"><label>検品料（円 / 総額）</label><input id="inspect" type="text" inputmode="decimal" placeholder="例: 3000"></div>
+      <div class="field"><label>代行手数料（円 / 総額）</label><input id="agent" type="text" inputmode="decimal" placeholder="例: 5000"></div>
     </div>
     <div class="grid3">
-      <div class="field"><label>梱包材（円 / 総額）</label><input id="pack" type="number" placeholder="例: 4000" step="100"></div>
-      <div class="field"><label>同梱物（円 / 総額）</label><input id="insert" type="number" placeholder="例: 2000" step="100"></div>
-      <div class="field"><label>消費税（%）</label><input id="ctax" type="number" placeholder="例: 10" step="1"></div>
+      <div class="field"><label>梱包材（円 / 総額）</label><input id="pack" type="text" inputmode="decimal" placeholder="例: 4000"></div>
+      <div class="field"><label>同梱物（円 / 総額）</label><input id="insert" type="text" inputmode="decimal" placeholder="例: 2000"></div>
+      <div class="field"><label>消費税（%）</label><input id="ctax" type="text" inputmode="decimal" placeholder="例: 10"></div>
     </div>
 
     <div style="display:flex; gap:10px; margin-top:16px; align-items:center; flex-wrap:wrap;">
@@ -569,8 +574,20 @@ function renderPlatformRows() {
   document.querySelectorAll('.ptable input').forEach(el => el.addEventListener('input', calc));
 }
 
+// ---- 未確認マーク（数値以外が入力された欄を赤く） ----
+const COST_FIELDS = ['fx','cny','qty','tariff','ship','inspect','agent','pack','insert','ctax'];
+function markUnconfirmed() {
+  COST_FIELDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const val = el.value.trim();
+    el.classList.toggle('unconfirmed', val !== '' && isNaN(parseFloat(val)));
+  });
+}
+
 // ---- メイン計算 ----
 function calc() {
+  markUnconfirmed();
   const fx=v('fx'), cny=v('cny'), qty=v('qty');
   const per = x => qty>0 ? x/qty : 0;
   const baseJpy   = cny*fx;
